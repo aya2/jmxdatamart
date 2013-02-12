@@ -42,8 +42,8 @@ public interface SimpleMXBean {
 
   void setLongAttribute(long longAttribute);
   
-  int getA();
+  long getA();
 
-  void setA(int A);
+  void setA(long A);
   
 }
