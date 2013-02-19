@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2012, Tripwire, Inc.
+package org.jmxdatamart.common;/*
+ * Copyright (c) 2013, Tripwire, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,14 +26,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.jmxdatamart.fixtures;
-
-import fitlibrary.DoFixture;
-
-public class CollectorTestHelper extends DoFixture {
-
-  public void collectStatisticsForSeconds(int collectTime) {
-
-  }
-
+public class DBException extends Exception {
+    public DBException(){
+        super();
+    }
+    public DBException(String msg){
+        super(msg);
+    }
+    public DBException(String msg, Throwable cause){
+        super(msg,cause);
+    }
+    public DBException(Throwable cause){
+        super(cause);
+    }
 }

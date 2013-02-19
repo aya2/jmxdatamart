@@ -28,15 +28,11 @@
 
 package org.jmxdatamart.fixtures;
 
-import fitlibrary.DoFixture;
+import fitlibrary.SetUpFixture;
 
-public class ConfigureCollector extends DoFixture {
+public class ConfigureMBeansToBeExtracted extends SetUpFixture {
 
-  public void collectStatisticsEveryMilliseconds(int collectionRate) {
-
-  }
-
-  public void writeStatisticsToFile(String fileName) {
+  public void beanNameBeanAliasAttributeAttributeAlias(String beanName, String beanAlias, String attribute, String attributeAlias) {
 
   }
 

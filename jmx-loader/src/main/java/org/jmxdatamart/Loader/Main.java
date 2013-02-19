@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2012, Tripwire, Inc.
+package org.jmxdatamart.Loader;/*
+ * Copyright (c) 2013, Tripwire, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,28 +26,28 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.jmxdatamart.fixtures;
+import org.jmxdatamart.common.DBException;
 
-import fitlibrary.SetUpFixture;
+import java.sql.SQLException;
 
-import javax.management.MBeanServerConnection;
+public class Main {
+    public static void main(String[] args) throws SQLException, DBException {
+        if (args.length!=1){
+            System.err.println("Must have one argument");
+            //System.exit(0);
+        }
+        //read file ...
 
-public abstract class MBeanSetUpFixture extends SetUpFixture {
+        String arg1 = "jmx-loader/src/main/java/org/jmxdatamart/Loader/loaderconfig.ini";
 
-  private MBeanServerConnection mBeanServer;
-
-  protected MBeanServerConnection getMBeanServer() {
-    if (mBeanServer == null) {
-      String jmxUrl = getJmxUrlFromArgs();
-      mBeanServer = MBeanServerFactory.getMBeanServer(jmxUrl);
+        DB2DB d2d = new DB2DB();
+        LoaderSetting s =d2d.readProperties(arg1);
+        d2d.loadSetting(s);
+        d2d.copySchema();
+        d2d.importData();
+        d2d.disConnect();
+        System.out.println("done");
     }
-    return mBeanServer;
-  }
 
-  private String getJmxUrlFromArgs() {
-    if (args == null) {
-      return null;
-    }
-    return args.length > 0 ? args[0] : null;
-  }
+
 }

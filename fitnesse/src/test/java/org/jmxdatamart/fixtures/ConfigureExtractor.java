@@ -28,26 +28,20 @@
 
 package org.jmxdatamart.fixtures;
 
-import fitlibrary.SetUpFixture;
+import fitlibrary.DoFixture;
 
-import javax.management.MBeanServerConnection;
+public class ConfigureExtractor extends DoFixture {
 
-public abstract class MBeanSetUpFixture extends SetUpFixture {
+  public void extractStatisticsEveryMilliseconds(int collectionRate) {
 
-  private MBeanServerConnection mBeanServer;
-
-  protected MBeanServerConnection getMBeanServer() {
-    if (mBeanServer == null) {
-      String jmxUrl = getJmxUrlFromArgs();
-      mBeanServer = MBeanServerFactory.getMBeanServer(jmxUrl);
-    }
-    return mBeanServer;
   }
 
-  private String getJmxUrlFromArgs() {
-    if (args == null) {
-      return null;
-    }
-    return args.length > 0 ? args[0] : null;
+  public void extractStatisticsFromUrl(String url) {
+
   }
+
+  public void writeStatisticsToDirectory(String directoryName) {
+
+  }
+
 }

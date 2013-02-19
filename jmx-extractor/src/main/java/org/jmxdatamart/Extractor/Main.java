@@ -28,18 +28,54 @@
 
 package org.jmxdatamart.Extractor;
 
+import java.io.FileInputStream;
 import java.lang.management.ManagementFactory;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Properties;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import org.jmxdatamart.JMXTestServer.TestBean;
-import org.jmxdatamart.common.*;
 
 public class Main {
+    
+    static final int GET_A = 0x01;
+    static final int GET_B = 0x02;
+    static final int GET_BOTH = GET_A | GET_B;
+    
+    private static void getA(TestBean tb) throws Exception{
+        Settings s = Settings.fromXML(
+                new FileInputStream("C:\\Extracted\\s1.xml"));
+        
+        Extractor etor = new Extractor(s);
+        
+        for (int i = 0; i < 10; ++i){
+            tb.setA(new Integer(i));
+            Thread.sleep(2000);
+        }
+    }
+    
+    private static void getB(TestBean tb) throws Exception{
+        Settings s = Settings.fromXML(
+                new FileInputStream("C:\\Extracted\\s2.xml"));
+        
+        Extractor etor = new Extractor(s);
+        
+        for (int i = 100; i > 80; --i){
+            tb.setB(new Integer(i));
+            Thread.sleep(2000);
+        }
+    }
+    
+    private static void getBoth(TestBean tb) throws Exception{
+        Settings s = Settings.fromXML(
+                new FileInputStream("C:\\Extracted\\s3.xml"));
+        
+        Extractor etor = new Extractor(s);
+        
+        for (int i = 0; i < 15; ++i){
+            tb.setA(i*i);
+            tb.setB(100-2*i);
+            Thread.sleep(2000);
+        }
+    }
 
   public static void main(String[] args) throws Exception {
         System.out.println("extract");
@@ -50,44 +86,26 @@ public class Main {
         //Create new test MBean
         TestBean tb = new TestBean();
         tb.setA(new Integer(expected));
+        tb.setB(new Integer(expected));
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         String mbName = "org.jmxdatamart.JMXTestServer:type=TestBean";
         ObjectName mbeanName = new ObjectName(mbName);
         mbs.registerMBean(tb, mbeanName);
         
-        //Create test MBean's MBeanData
-        Attribute a = new Attribute("A", "Alpha", DataType.INT);
-        MBeanData mbd = new MBeanData(mbName, "testMBean",
-                                        Collections.singletonList(a), true);
-
-        //Init MBeanExtract
-        MBeanExtract instance = new MBeanExtract(mbd, mbs);
-        Map result = instance.extract();
+        // Main extract
         
-        //test MBean to embbed DB
-        Settings s = new Settings();
-        s.setBeans(Collections.singletonList((BeanData)mbd));
-        s.setFolderLocation("HyperSQL/");
-        s.setPollingRate(2);
-        s.setUrl("service:jmx:rmi:///jndi/rmi://:9999/jmxrmi");
-        Properties props = new Properties();
-        props.put("username", "sa");
-        props.put("password", "whatever");
-
-        Bean2DB bd = new Bean2DB();
-        String dbname = bd.generateMBeanDB(s);
-
-        HypersqlHandler hsql = new HypersqlHandler();
-        Connection conn= hsql.connectDatabase(dbname,props);
-        bd.export2DB(conn,mbd,result);
-        ResultSet rs = conn.createStatement().executeQuery("select A from org_jmxdatamart_JMXTestServer__type___TestBean");
-        rs.next();
-        System.out.println(rs.getInt(1));
-        rs.close();
-        hsql.shutdownDatabase(conn);
-        hsql.disconnectDatabase(rs,null,null,conn);
-
-        // TODO review the generated test code and remove the default call to fail.
-        //fail("The test case is a prototype.");
+        int toBeExtracted = GET_BOTH;
+        
+        switch (toBeExtracted){
+            case GET_A:
+                getA(tb);
+                break;
+            case GET_B:
+                getB(tb);
+                break;
+            case GET_BOTH:
+                getBoth(tb);
+            default:
+        }
   }
 }
