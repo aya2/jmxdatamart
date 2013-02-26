@@ -34,6 +34,7 @@ import org.jmxdatamart.common.DataType;
 
 import java.io.*;
 import java.util.*;
+import javax.management.MalformedObjectNameException;
 
 
 
@@ -198,6 +199,16 @@ public class Settings {
 
         Settings settings = (Settings)xstream.fromXML(s);
         settings.sanitize();
+        
+        //is this what it's supposed to do?
+        try{
+            settings.check();
+        } catch (MalformedObjectNameException e){
+            //print message and exit the program
+            System.out.println(e.getMessage());
+            System.exit(1); //exit code?
+        }
+        
         return settings;
     }
     
@@ -210,6 +221,119 @@ public class Settings {
                 beans.toString();
         
     }
+    
+    /* Author: Aya Yakura
+     * Settings.check(), Settings.checkAlphanumeric()
+     * Checks to see if:
+     * 1. alias is unique within the same bean
+     * 2. bean's alias is unique within the same setting
+     * 3. Alias must be alphanumeric only and start with a letter
+     * (4. Log message and throw runtime exception if they doesn't meet the requirements)
+     */
+    public void check() throws MalformedObjectNameException{
+        //create linked lists and variables that holds values we need to check
+        LinkedList beanAlias = new LinkedList();
+        LinkedList attriAlias = new LinkedList();
+        String compString;
+        int beanSize;
+        int attriSize;
+        
+        //gather the data needed and check the values
+        //check the the attributes within each bean as it iterates through the Settings
+        for(BeanData bData : getBeans()){ //iterates through all the beans
+            String bDataAlias = bData.getAlias(); //gets the alias of this bean
+            beanAlias.add(bDataAlias); //append this string to the end of bean alias linked list
+            
+            for (Attribute atData : bData.getAttributes()){ //iterates and gets all attributes in the bean              
+                String atDataAlias = atData.getAlias(); //gets the alias of this attrubute within this bean
+                attriAlias.add(atDataAlias); //append this string to the end of attribute alias linked list          
+            }
+            
+            //after the atriAlias list is constructed, look for duplicates
+            //size-1 because no need to check duplicates of the last element
+            attriSize = attriAlias.size();
+            for (int i=0; i<attriSize-1; i++){
+                //check duplicates in the list one by one.
+                //take the head and check with the rest of the list.
+                
+                //remove the head before checking and store it.                
+                compString = (String)attriAlias.remove();
+                
+                //print for debugging purposes
+                /*
+                System.out.println(attriAlias.size());
+                System.out.println(compString);
+                System.out.println(attriAlias);
+                System.out.println();
+                //System.out.println(compString);
+                */
+                if (attriAlias.contains(compString)){//check duplicates in the list
+                    System.out.println("duplicate attribute found within bean: " + bDataAlias + ": " + compString); //just for debugging
+                    //throw new MalformedObjectNameException("duplicate attribute found within bean: " + bDataAlias + ": " + compString);//***throw exception
+                }
+                
+                //check if this alias is alphanumeric only and starts with a letter
+                checkAlphanumeric(compString);
+            }
+            //check the last alias for alphanumeric & starts with a letter, 
+            //because it got skipped in the for loop
+            compString = (String)attriAlias.remove();
+            checkAlphanumeric(compString);
+            
+            
+            //clear the list for the next iteration (don't need to because its cleared already)
+            //attriAlias.clear();
+        }
+        //Similarly, check for duplicates for beanAlias list after beanAlias list is constructed
+
+        beanSize = beanAlias.size();
+        for (int i=0; i<beanSize-1; ++i){
+            compString = (String)beanAlias.remove();
+            
+            //print for debugging purposes
+            /*
+            System.out.println(beanAlias.size());
+            System.out.println(compString);
+            System.out.println(beanAlias);
+            System.out.println();
+            * */
+                      
+            if(beanAlias.contains(compString)){
+                System.out.println("duplicate attribute found within this setting: " + compString); //just for debugging
+                //throw new MalformedObjectNameException("duplicate attribute found within this setting: " + compString);//***throw exception
+            }
+            
+            //check if this alias is alphanumeric only and starts with a letter
+            checkAlphanumeric(compString);
+        }
+        //check the last alias for alphanumeric & starts with a letter, 
+        //because it got skipped in the for loop
+        compString = (String)beanAlias.remove();
+        checkAlphanumeric(compString);
+    }
+    
+    public static void checkAlphanumeric(String compString) throws MalformedObjectNameException{
+        char[] compCharArray = compString.toCharArray(); //convert to char array
+                
+        //checks the first letter
+        if(!Character.isLetter(compCharArray[0])){
+            System.out.println("Attribute " + compString + " does not start with a letter."); //just for debugging
+            //throw new MalformedObjectNameException("Attribute " + compString + " does not start with a letter.");//***throw exception
+        }
+        //check if all characters are alphanumeric
+        for(char c : compCharArray){ 
+            if (!Character.isLetterOrDigit(c)){
+                System.out.println("Attribute " + compString + " contains non-alphanumeric character."); 
+                //throw new MalformedObjectNameException("Attribute " + compString + " contains non-alphanumeric character."); //***throw exception
+                break; //*comment this out if throwing exception* if there was one non-alphanumeric character, no need to check the rest of the string    
+            }
+        }
+    }
+    
+    /*
+     * Code by Aya Yakura ends here
+     */
+    
     
     public static void main( String[] args ) throws IOException
     {
@@ -230,11 +354,28 @@ public class Settings {
         s.getBeans().add(bd);
         s.sanitize();
         System.out.println(s.toString());
+              
+        //Adding a new bean, just testing...
+        bd = new MBeanData("com.example:type=Hello","", new ArrayList<Attribute>(), true);
+        bd.getAttributes().add(new Attribute("Name-", "", DataType.STRING));
+        bd.getAttributes().add(new Attribute("0CacheSize", "", DataType.INT));
+        bd.getAttributes().add(new Attribute("Time022", "", DataType.INT));
+        bd.getAttributes().add(new Attribute("Time022", "", DataType.STRING));
+        bd.getAttributes().add(new Attribute("Stamp!", "", DataType.STRING));
+        s.getBeans().add(bd);
+        s.sanitize();
+        System.out.println(s.toString());
         
         String sXML = s.toXML();
         System.out.println(sXML);
         FileWriter out = new FileWriter("settings.xml");
         out.write(sXML);
         out.close();
+        
+        try{
+            s.check();
+        } catch (MalformedObjectNameException e){
+            
+        }
     }
 }
