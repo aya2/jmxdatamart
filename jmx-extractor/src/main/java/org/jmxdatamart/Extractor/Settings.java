@@ -197,6 +197,7 @@ public class Settings {
 
         
         //is this what it's supposed to do?
+        
         try{
             settings.check();
         } catch (MalformedObjectNameException e){
@@ -204,6 +205,7 @@ public class Settings {
             System.out.println(e.getMessage());
             System.exit(1); //exit code?
         }
+        
         
         return settings;
     }
@@ -363,20 +365,22 @@ public class Settings {
         s.setBeans(new ArrayList<BeanData>());
         
         MBeanData bd = new MBeanData("com.example:type=Hello","Hello", new ArrayList<Attribute>(), true);
-        bd.getAttributes().add(new Attribute("Name", "aaa", DataType.STRING));
-        bd.getAttributes().add(new Attribute("CacheSize", "aaa", DataType.INT));
+        bd.getAttributes().add(new Attribute("Name", "nameA", DataType.STRING));
+        bd.getAttributes().add(new Attribute("CacheSize", "cacheB", DataType.INT));
         s.getBeans().add(bd);
 
         System.out.println(s.toString());
               
         //Adding a new bean, just testing...
-        bd = new MBeanData("com.example:type=Hello","Hello", new ArrayList<Attribute>(), true);
+        
+        bd = new MBeanData("com.example:type=Hello","HelloA", new ArrayList<Attribute>(), true);
         bd.getAttributes().add(new Attribute("", "", DataType.STRING));
         bd.getAttributes().add(new Attribute(null, "", DataType.INT));
-        bd.getAttributes().add(new Attribute("Time022", "aa", DataType.INT));
-        bd.getAttributes().add(new Attribute("Time022", "aa", DataType.STRING));
-        bd.getAttributes().add(new Attribute("Stamp!", "", DataType.STRING));
+        bd.getAttributes().add(new Attribute("Time", "timeA", DataType.INT));
+        bd.getAttributes().add(new Attribute("Time022", "timeB", DataType.STRING));
+        bd.getAttributes().add(new Attribute("Other", "otherA", DataType.STRING));
         s.getBeans().add(bd);
+        
         
         System.out.println(s.toString());
         
@@ -389,7 +393,8 @@ public class Settings {
         try{
             s.check();
         } catch (MalformedObjectNameException e){
-            
+            System.out.println(e.getMessage());
+            System.exit(1); //exit code?
         }
     }
 }
