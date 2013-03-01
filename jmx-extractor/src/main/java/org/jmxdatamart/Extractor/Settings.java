@@ -396,5 +396,6 @@ public class Settings {
             System.out.println(e.getMessage());
             System.exit(1); //exit code?
         }
+        
     }
 }
