@@ -151,18 +151,6 @@ public class Settings {
         xstream.alias("Attribute", Attribute.class);
     }
     
-    public void sanitize() {
-        for (BeanData bd : getBeans()) {
-            if ("".equals(bd.getAlias())) {
-                bd.setAlias(bd.getName());
-            }
-            for (Attribute a : bd.getAttributes()) {
-                if ("".equals(a.getAlias())) {
-                    a.setAlias(a.getName());
-                }
-            }
-        }
-    }
     
     public String toXML() {
         XStream xstream = new XStream(new DomDriver());
@@ -184,7 +172,15 @@ public class Settings {
         xstream.alias("Attribute", Attribute.class);
         
         Settings settings = (Settings)xstream.fromXML(s);
-        settings.sanitize();
+
+        try{
+            settings.check();
+        } catch (MalformedObjectNameException e){
+            //print message and exit the program
+            System.out.println(e.getMessage());
+            System.exit(1); //exit code? 
+        }
+        
         return settings;
         
     }
@@ -198,7 +194,7 @@ public class Settings {
         xstream.alias("Attribute", Attribute.class);
 
         Settings settings = (Settings)xstream.fromXML(s);
-        settings.sanitize();
+
         
         //is this what it's supposed to do?
         try{
@@ -242,16 +238,31 @@ public class Settings {
         //check the the attributes within each bean as it iterates through the Settings
         for(BeanData bData : getBeans()){ //iterates through all the beans
             String bDataAlias = bData.getAlias(); //gets the alias of this bean
-            beanAlias.add(bDataAlias); //append this string to the end of bean alias linked list
             
-            for (Attribute atData : bData.getAttributes()){ //iterates and gets all attributes in the bean              
+            // *** ignore null or empty strings ("") while making this linked list ***
+            // *** because it's valid but there's no need to check for duplicates/alphanumeric for these cases ***
+            if (bDataAlias != null && !bDataAlias.equals("")){
+                beanAlias.add(bDataAlias); //append this string to the end of bean alias linked list
+            }
+            
+            
+            for (Attribute atData : bData.getAttributes()){ //iterates and gets all attributes in the bean                            
                 String atDataAlias = atData.getAlias(); //gets the alias of this attrubute within this bean
-                attriAlias.add(atDataAlias); //append this string to the end of attribute alias linked list          
+                
+                // *** ignore null or empty strings ("") while making this linked list ***
+                // *** Same reason as in Bean alias above ***
+                if (atDataAlias != null && !atDataAlias.equals("")){                   
+                    attriAlias.add(atDataAlias); //append this string to the end of attribute alias linked list 
+                }          
             }
             
             //after the atriAlias list is constructed, look for duplicates
             //size-1 because no need to check duplicates of the last element
+            //break out if the list is empty at this point
             attriSize = attriAlias.size();
+            if (attriSize == 0)
+                break;
+            
             for (int i=0; i<attriSize-1; i++){
                 //check duplicates in the list one by one.
                 //take the head and check with the rest of the list.
@@ -268,8 +279,8 @@ public class Settings {
                 //System.out.println(compString);
                 */
                 if (attriAlias.contains(compString)){//check duplicates in the list
-                    System.out.println("duplicate attribute found within bean: " + bDataAlias + ": " + compString); //just for debugging
-                    //throw new MalformedObjectNameException("duplicate attribute found within bean: " + bDataAlias + ": " + compString);//***throw exception
+                    //System.out.println("duplicate attribute found within bean: " + bDataAlias + ": " + compString); //just for debugging
+                    throw new MalformedObjectNameException("duplicate attribute found within bean: " + bDataAlias + ": " + compString);//***throw exception
                 }
                 
                 //check if this alias is alphanumeric only and starts with a letter
@@ -285,8 +296,11 @@ public class Settings {
             //attriAlias.clear();
         }
         //Similarly, check for duplicates for beanAlias list after beanAlias list is constructed
-
+        //No need to do anything else if size is 0.
         beanSize = beanAlias.size();
+        if (beanSize == 0){
+            return;
+        }
         for (int i=0; i<beanSize-1; ++i){
             compString = (String)beanAlias.remove();
             
@@ -299,8 +313,8 @@ public class Settings {
             * */
                       
             if(beanAlias.contains(compString)){
-                System.out.println("duplicate attribute found within this setting: " + compString); //just for debugging
-                //throw new MalformedObjectNameException("duplicate attribute found within this setting: " + compString);//***throw exception
+                //System.out.println("duplicate attribute found within this setting: " + compString); //just for debugging
+                throw new MalformedObjectNameException("duplicate attribute found within this setting: " + compString);//***throw exception
             }
             
             //check if this alias is alphanumeric only and starts with a letter
@@ -317,15 +331,15 @@ public class Settings {
                 
         //checks the first letter
         if(!Character.isLetter(compCharArray[0])){
-            System.out.println("Attribute " + compString + " does not start with a letter."); //just for debugging
-            //throw new MalformedObjectNameException("Attribute " + compString + " does not start with a letter.");//***throw exception
+            //System.out.println("Attribute " + compString + " does not start with a letter."); //just for debugging
+            throw new MalformedObjectNameException("Attribute " + compString + " does not start with a letter.");//***throw exception
         }
         //check if all characters are alphanumeric
         for(char c : compCharArray){ 
             if (!Character.isLetterOrDigit(c)){
-                System.out.println("Attribute " + compString + " contains non-alphanumeric character."); 
-                //throw new MalformedObjectNameException("Attribute " + compString + " contains non-alphanumeric character."); //***throw exception
-                break; //*comment this out if throwing exception* if there was one non-alphanumeric character, no need to check the rest of the string    
+                //System.out.println("Attribute " + compString + " contains non-alphanumeric character."); 
+                throw new MalformedObjectNameException("Attribute " + compString + " contains non-alphanumeric character."); //***throw exception
+                //break; //*comment this out if throwing exception* if there was one non-alphanumeric character, no need to check the rest of the string    
             }
         }
     }
@@ -348,22 +362,22 @@ public class Settings {
         s.setUrl("service:jmx:rmi:///jndi/rmi://:9999/jmxrmi");
         s.setBeans(new ArrayList<BeanData>());
         
-        MBeanData bd = new MBeanData("com.example:type=Hello","", new ArrayList<Attribute>(), true);
-        bd.getAttributes().add(new Attribute("Name", "", DataType.STRING));
-        bd.getAttributes().add(new Attribute("CacheSize", "", DataType.INT));
+        MBeanData bd = new MBeanData("com.example:type=Hello","Hello", new ArrayList<Attribute>(), true);
+        bd.getAttributes().add(new Attribute("Name", "aaa", DataType.STRING));
+        bd.getAttributes().add(new Attribute("CacheSize", "aaa", DataType.INT));
         s.getBeans().add(bd);
-        s.sanitize();
+
         System.out.println(s.toString());
               
         //Adding a new bean, just testing...
-        bd = new MBeanData("com.example:type=Hello","", new ArrayList<Attribute>(), true);
-        bd.getAttributes().add(new Attribute("Name-", "", DataType.STRING));
-        bd.getAttributes().add(new Attribute("0CacheSize", "", DataType.INT));
-        bd.getAttributes().add(new Attribute("Time022", "", DataType.INT));
-        bd.getAttributes().add(new Attribute("Time022", "", DataType.STRING));
+        bd = new MBeanData("com.example:type=Hello","Hello", new ArrayList<Attribute>(), true);
+        bd.getAttributes().add(new Attribute("", "", DataType.STRING));
+        bd.getAttributes().add(new Attribute(null, "", DataType.INT));
+        bd.getAttributes().add(new Attribute("Time022", "aa", DataType.INT));
+        bd.getAttributes().add(new Attribute("Time022", "aa", DataType.STRING));
         bd.getAttributes().add(new Attribute("Stamp!", "", DataType.STRING));
         s.getBeans().add(bd);
-        s.sanitize();
+        
         System.out.println(s.toString());
         
         String sXML = s.toXML();
